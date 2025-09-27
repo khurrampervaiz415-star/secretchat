@@ -191,26 +191,8 @@
       }
     }
 
-    // Generate floating balloons
-    function createBalloons(count = 8) {
-      for (let i = 0; i < count; i++) {
-        const balloon = document.createElement("div");
-        balloon.classList.add("balloon");
-        balloon.style.left = Math.random() * 100 + "vw";
-        // Use brighter, more visible colors
-        const hue = Math.random() * 360;
-        balloon.style.background = `linear-gradient(135deg, hsl(${hue}, 80%, 65%), hsl(${hue + 20}, 70%, 50%))`;
-        balloon.style.animationDuration = (12 + Math.random() * 10) + "s";
-        balloon.style.animationDelay = (Math.random() * 20) + "s";
-        // Add some visual effects
-        balloon.style.filter = 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))';
-        document.body.appendChild(balloon);
-      }
-    }
-
     window.onload = () => {
       createStars();
-      createBalloons();
       loadCurrentQuestion();
     };
   </script>
