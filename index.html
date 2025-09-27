@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2 class="secretTitle">Enter the Secret Code</h2>
+    <input type="password" id="passcode" placeholder="Enter passcode">
+    <button onclick="checkCode()">Submit</button>
+    <p id="error" style="color:red;"></p>
+  </div>
+
+  <script>
+    async function checkCode() {
+      const code = document.getElementById('passcode').value;
+      const errorEl = document.getElementById('error');
+      
+      if (!code) {
+        errorEl.innerText = "Please enter a passcode!";
+        return;
+      }
+
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: code })
+        });
+
+        const data = await res.json();
+        
+        if (data.success) {
+          // Store user info in sessionStorage
+          sessionStorage.setItem('userId', data.userId);
+          sessionStorage.setItem('userName', data.userName);
+          sessionStorage.setItem('userPassword', code);
+          
+          window.location.href = "secret.html";
+        } else {
+          errorEl.innerText = data.message || "Wrong passcode!";
+        }
+      } catch (err) {
+        errorEl.innerText = "Server error. Please try again.";
+      }
+    }
+
+    // Handle Enter key
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('passcode').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          checkCode();
+        }
+      });
+    });
+  </script>
+  <script>
+  // Generate twinkling stars
+  function createStars(count = 50) {
+    for (let i = 0; i < count; i++) {
+      const star = document.createElement("div");
+      star.classList.add("star");
+      star.style.top = Math.random() * 100 + "vh";
+      star.style.left = Math.random() * 100 + "vw";
+      star.style.animationDuration = (1 + Math.random() * 2) + "s";
+      document.body.appendChild(star);
+    }
+  }
+
+  // Generate floating balloons
+  function createBalloons(count = 10) {
+    for (let i = 0; i < count; i++) {
+      const balloon = document.createElement("div");
+      balloon.classList.add("balloon");
+      balloon.style.left = Math.random() * 100 + "vw";
+      // Use brighter, more visible colors
+      const hue = Math.random() * 360;
+      balloon.style.background = `linear-gradient(135deg, hsl(${hue}, 80%, 65%), hsl(${hue + 20}, 70%, 50%))`;
+      balloon.style.animationDuration = (10 + Math.random() * 8) + "s";
+      balloon.style.animationDelay = (Math.random() * 15) + "s";
+      // Add some visual effects
+      balloon.style.filter = 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))';
+      document.body.appendChild(balloon);
+    }
+  }
+
+  // Run on load
+  window.onload = () => {
+    createStars();
+    createBalloons();
+  };
+</script>
+
+  <!-- Cute bears in corners -->
+<div class="bear top-left"></div>
+<div class="bear top-right"></div>
+<div class="bear bottom-left"></div>
+<div class="bear bottom-right"></div>
+
+</body>
+</html>

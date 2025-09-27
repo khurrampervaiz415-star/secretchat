@@ -1,0 +1,276 @@
+:root {
+  --p1: #ff6f61;
+  --p2: #ff9a8b;
+  --p3: #ffb6c1;
+  --p4: #d291bc;
+}
+
+body {
+  margin: 0;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  background: radial-gradient(circle, var(--p1), var(--p2), var(--p3), var(--p4));
+  overflow-x: hidden; /* Only hide horizontal overflow */
+  overflow-y: auto; /* Allow vertical scrolling to see balloons */
+  color: #fff;
+  text-align: center;
+  min-height: 100vh;
+}
+
+/* Specific styling for secret page - bound to 100vh */
+body.secret-page {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden; /* Hide overflow for secret page to keep it bounded */
+}
+
+/* Ensure secret page container fits within viewport */
+body.secret-page .container {
+  top: 10%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.container {
+  position: relative;
+  z-index: 5;
+  top: 20%;
+}
+
+.secretTitle {
+  font-size: 36px;
+  background: linear-gradient(90deg, var(--p1), var(--p2), var(--p3), var(--p4));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-weight: 800;
+  margin-bottom: 10px;
+  text-shadow: 0 8px 30px rgba(155,89,255,0.06);
+}
+
+.secretText {
+  font-size: 20px;
+  margin: 20px auto;
+  width: 80%;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 15px;
+}
+
+input[type="password"], input[type="text"], textarea {
+  width: 70%;
+  max-width: 400px;
+  height: auto;
+  border-radius: 10px;
+  border: none;
+  padding: 10px;
+  font-size: 16px;
+  resize: none;
+  margin: 5px;
+}
+
+textarea {
+  height: 80px;
+  min-height: 60px;
+}
+
+button {
+  background: var(--p1);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+button:hover {
+  background: var(--p4);
+}
+
+/* ⭐ Bigger twinkling stars */
+@keyframes twinkle {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.5); }
+}
+.star {
+  position: absolute;
+  width: 4px;   /* bigger than before */
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 2s infinite ease-in-out;
+  z-index: 0;
+}
+
+/* 🎈 Floating balloons */
+@keyframes float {
+  0% { 
+    transform: translateY(60vh) scale(0.8); 
+    opacity: 0; 
+  }
+  10% { 
+    opacity: 0.9; 
+  }
+  90% { 
+    opacity: 0.9; 
+  }
+  100% { 
+    transform: translateY(-30vh) scale(1.2); 
+    opacity: 0; 
+  }
+}
+
+/* Special animation for secret page within 100vh bounds */
+@keyframes floatBounded {
+  0% { 
+    transform: translateY(60vh) scale(0.8); 
+    opacity: 0; 
+  }
+  15% { 
+    opacity: 0.9; 
+  }
+  85% { 
+    opacity: 0.9; 
+  }
+  100% { 
+    transform: translateY(-100px) scale(1.1); 
+    opacity: 0; 
+  }
+}
+
+.balloon {
+  position: fixed;
+  bottom: 0;
+  width: 60px;
+  height: 80px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation: float 12s linear infinite;
+  z-index: 3; /* Higher z-index to appear above other elements */
+  /* Add some default styling to make balloons visible even without JS colors */
+  background: linear-gradient(135deg, #ff6b9d, #c44569);
+  box-shadow: inset -5px -5px 10px rgba(0,0,0,0.1), 
+              2px 2px 8px rgba(0,0,0,0.2);
+  /* Add balloon highlight */
+  position: relative;
+}
+
+/* Use bounded animation for secret page */
+.secret-page .balloon {
+  animation: floatBounded 10s linear infinite;
+}
+.balloon::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 20%;
+  width: 20px;
+  height: 25px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  /* Balloon highlight */
+}
+.balloon::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  width: 1px;
+  height: 30px;
+  background: rgba(255,255,255,0.6);
+  transform: translateX(-50%);
+}
+
+/* 🐻 Cute bouncing bears */
+@keyframes bearBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.bear {
+  position: fixed;
+  width: 80px;
+  height: 80px;
+  background: url('https://cdn-icons-png.flaticon.com/512/616/616408.png') no-repeat center/contain;
+  z-index: 2;
+  animation: bearBounce 3s ease-in-out infinite;
+}
+.bear.top-left { top: 10px; left: 10px; }
+.bear.top-right { top: 10px; right: 10px; }
+.bear.bottom-left { bottom: 10px; left: 10px; }
+.bear.bottom-right { bottom: 10px; right: 10px; }
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .secretTitle {
+    font-size: 28px;
+  }
+  
+  .secretText {
+    width: 90%;
+    font-size: 16px;
+  }
+  
+  input[type="password"], input[type="text"], textarea {
+    width: 85%;
+  }
+  
+  button {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+  
+  .bear {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .secretTitle {
+    font-size: 24px;
+  }
+  
+  .secretText {
+    font-size: 14px;
+    padding: 10px;
+  }
+  
+  .container {
+    top: 15%;
+    padding: 0 10px;
+  }
+  
+  input[type="password"], input[type="text"], textarea {
+    width: 95%;
+    font-size: 14px;
+  }
+  
+  .bear {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* 🐻 Cute bouncing bears */
+@keyframes bearBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.bear {
+  position: fixed;
+  width: 80px;
+  height: 80px;
+  background: url('https://cdn-icons-png.flaticon.com/512/616/616408.png') no-repeat center/contain;
+  z-index: 2;
+  animation: bearBounce 3s ease-in-out infinite;
+}
+.bear.top-left { top: 10px; left: 10px; }
+.bear.top-right { top: 10px; right: 10px; }
+.bear.bottom-left { bottom: 10px; left: 10px; }
+.bear.bottom-right { bottom: 10px; right: 10px; }
+
