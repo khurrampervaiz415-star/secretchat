@@ -7,7 +7,19 @@ const path = require("path");
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(__dirname));
+
+// Serve static files with proper MIME types
+app.use(express.static(path.join(__dirname), {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (path.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
+    }
+  }
+}));
 
 // Connect MongoDB
 mongoose.connect("mongodb+srv://pgcdhaofficial:TJZxAPIpLBwzfs4e@pgcdha.qbzia76.mongodb.net/secretchat", {
@@ -61,6 +73,27 @@ initializeDefaultQuestion();
 
 // Routes
 
+// Serve static CSS and JS files with proper MIME types
+app.get('/style.css', (req, res) => {
+  res.setHeader('Content-Type', 'text/css');
+  res.sendFile(path.join(__dirname, 'style.css'));
+});
+
+app.get('/script.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'script.js'));
+});
+
+app.get('/admin.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'admin.js'));
+});
+
+app.get('/user-script.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'user-script.js'));
+});
+
 // Serve static files
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -68,6 +101,15 @@ app.get('/', (req, res) => {
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+app.get('/secret.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'secret.html'));
+});
+
+// Handle favicon request
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end(); // No content
 });
 
 // Admin authentication
@@ -243,6 +285,16 @@ app.delete("/admin/users/:userId", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Database error" });
   }
+});
+
+// Catch-all route for any unhandled requests - serve index.html for SPA routing
+app.get('*', (req, res) => {
+  // If it's a request for a file that should exist, return 404
+  if (req.path.includes('.') && !req.path.endsWith('.html')) {
+    return res.status(404).send('File not found');
+  }
+  // Otherwise, serve index.html for SPA routing
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
