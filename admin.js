@@ -145,21 +145,29 @@ function displayUsers(users) {
     return;
   }
 
-  usersListEl.innerHTML = users.map(user => `
-    <div class="user-item">
-      <strong>Name:</strong> ${user.name}<br>
-      <strong>Password:</strong> ${user.password}<br>
-      <strong>Created:</strong> ${new Date(user.created_at).toLocaleString()}<br>
-      <button class="btn btn-danger" onclick="deleteUser('${user._id}', '${user.name}')">
-        Delete User
-      </button>
-    </div>
-  `).join('');
+  usersListEl.innerHTML = users.map(user => {
+    const status = user.is_deleted ? 'DEACTIVATED' : 'ACTIVE';
+    const statusColor = user.is_deleted ? '#dc3545' : '#28a745';
+    const actionButton = user.is_deleted 
+      ? `<button class="btn" onclick="restoreUser('${user._id}', '${user.name}')">Restore User</button>`
+      : `<button class="btn btn-danger" onclick="deleteUser('${user._id}', '${user.name}')">Deactivate User</button>`;
+    
+    return `
+      <div class="user-item" style="border-left-color: ${statusColor};">
+        <strong>Name:</strong> ${user.name}<br>
+        <strong>Password:</strong> ${user.password}<br>
+        <strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${status}</span><br>
+        <strong>Created:</strong> ${new Date(user.created_at).toLocaleString()}<br>
+        ${user.is_deleted && user.deleted_at ? `<strong>Deactivated:</strong> ${new Date(user.deleted_at).toLocaleString()}<br>` : ''}
+        ${actionButton}
+      </div>
+    `;
+  }).join('');
 }
 
-// Delete user
+// Delete user (soft delete)
 async function deleteUser(userId, userName) {
-  if (!confirm(`Are you sure you want to delete user "${userName}"? This will also delete all their replies.`)) {
+  if (!confirm(`Are you sure you want to deactivate user "${userName}"? Their replies will be preserved and they can be restored later.`)) {
     return;
   }
 
@@ -173,11 +181,37 @@ async function deleteUser(userId, userName) {
     const data = await res.json();
     
     if (res.ok) {
-      alert('User deleted successfully!');
+      alert('User deactivated successfully! Their replies are preserved.');
       loadUsers();
-      loadReplies(); // Refresh replies as well
+      loadReplies(); // Refresh replies to show updated status
     } else {
-      alert(data.error || 'Failed to delete user');
+      alert(data.error || 'Failed to deactivate user');
+    }
+  } catch (err) {
+    alert('Server error. Please try again.');
+  }
+}
+
+// Restore user
+async function restoreUser(userId, userName) {
+  if (!confirm(`Are you sure you want to restore user "${userName}"?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/admin/users/${userId}/restore`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminPassword: currentAdminPassword })
+    });
+
+    const data = await res.json();
+    
+    if (res.ok) {
+      alert('User restored successfully!');
+      loadUsers();
+    } else {
+      alert(data.error || 'Failed to restore user');
     }
   } catch (err) {
     alert('Server error. Please try again.');
@@ -208,14 +242,21 @@ function displayReplies(replies) {
     return;
   }
 
-  repliesListEl.innerHTML = replies.map(reply => `
-    <div class="reply-item">
-      <strong>User:</strong> ${reply.userName} (Password: ${reply.userPassword})<br>
-      <strong>Question:</strong> ${reply.question}<br>
-      <strong>Reply:</strong> ${reply.reply}<br>
-      <strong>Submitted:</strong> ${new Date(reply.created_at).toLocaleString()}
-    </div>
-  `).join('');
+  repliesListEl.innerHTML = replies.map(reply => {
+    // Check if user exists and get status
+    const userStatus = reply.userId && reply.userId.name ? 'ACTIVE' : 'DEACTIVATED';
+    const statusColor = userStatus === 'ACTIVE' ? '#28a745' : '#dc3545';
+    
+    return `
+      <div class="reply-item">
+        <strong>User:</strong> ${reply.userName} (Password: ${reply.userPassword}) 
+        <span style="color: ${statusColor}; font-weight: bold; margin-left: 10px;">[${userStatus}]</span><br>
+        <strong>Question:</strong> ${reply.question}<br>
+        <strong>Reply:</strong> ${reply.reply}<br>
+        <strong>Submitted:</strong> ${new Date(reply.created_at).toLocaleString()}
+      </div>
+    `;
+  }).join('');
 }
 
 // Utility function to show status messages

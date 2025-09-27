@@ -31,6 +31,8 @@ mongoose.connect("mongodb+srv://pgcdhaofficial:TJZxAPIpLBwzfs4e@pgcdha.qbzia76.m
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   password: { type: String, required: true },
+  is_deleted: { type: Boolean, default: false },
+  deleted_at: { type: Date, default: null },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -94,6 +96,12 @@ app.get('/user-script.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'user-script.js'));
 });
 
+// Serve bear image
+app.get('/bear.jpg', (req, res) => {
+  res.setHeader('Content-Type', 'image/jpeg');
+  res.sendFile(path.join(__dirname, 'bear.jpg'));
+});
+
 // Serve static files
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -134,10 +142,19 @@ app.post("/admin/users", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // Check if password already exists
+    // Check if password already exists (including soft-deleted users)
     const existingUser = await User.findOne({ password });
-    if (existingUser) {
+    if (existingUser && !existingUser.is_deleted) {
       return res.status(400).json({ error: "Password already exists. Please choose a different password." });
+    }
+    
+    // If user was soft-deleted, restore them with new name
+    if (existingUser && existingUser.is_deleted) {
+      existingUser.name = name;
+      existingUser.is_deleted = false;
+      existingUser.deleted_at = null;
+      await existingUser.save();
+      return res.status(200).json({ message: "User restored and updated successfully", userId: existingUser._id });
     }
 
     const newUser = new User({ name, password });
@@ -156,6 +173,7 @@ app.get("/admin/users", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    // Get all users including soft-deleted ones
     const users = await User.find().sort({ created_at: -1 });
     res.json(users);
   } catch (err) {
@@ -202,7 +220,7 @@ app.get("/question", async (req, res) => {
 app.post("/login", async (req, res) => {
   try {
     const { password } = req.body;
-    const user = await User.findOne({ password });
+    const user = await User.findOne({ password, is_deleted: false }); // Only allow active users
     
     if (user) {
       res.json({ 
@@ -212,7 +230,7 @@ app.post("/login", async (req, res) => {
         userName: user.name 
       });
     } else {
-      res.status(401).json({ success: false, message: "Invalid password" });
+      res.status(401).json({ success: false, message: "Invalid password or user has been deactivated" });
     }
   } catch (err) {
     res.status(500).json({ error: "Server error" });
@@ -224,10 +242,14 @@ app.post("/replies", async (req, res) => {
   try {
     const { userId, userPassword, reply } = req.body;
     
-    // Verify user exists
+    // Verify user exists and is active
     const user = await User.findById(userId);
     if (!user || user.password !== userPassword) {
       return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    if (user.is_deleted) {
+      return res.status(401).json({ error: "User account has been deactivated" });
     }
 
     // Get current active question
@@ -269,7 +291,7 @@ app.get("/admin/replies", async (req, res) => {
   }
 });
 
-// Delete user (admin only)
+// Soft delete user (admin only)
 app.delete("/admin/users/:userId", async (req, res) => {
   try {
     const { adminPassword } = req.body;
@@ -277,11 +299,40 @@ app.delete("/admin/users/:userId", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    await User.findByIdAndDelete(req.params.userId);
-    // Also delete all replies from this user
-    await Reply.deleteMany({ userId: req.params.userId });
+    // Soft delete the user
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
     
-    res.json({ message: "User deleted successfully" });
+    user.is_deleted = true;
+    user.deleted_at = new Date();
+    await user.save();
+    
+    res.json({ message: "User deactivated successfully. Their replies are preserved." });
+  } catch (err) {
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Restore soft-deleted user (admin only)
+app.put("/admin/users/:userId/restore", async (req, res) => {
+  try {
+    const { adminPassword } = req.body;
+    if (adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    user.is_deleted = false;
+    user.deleted_at = null;
+    await user.save();
+    
+    res.json({ message: "User restored successfully" });
   } catch (err) {
     res.status(500).json({ error: "Database error" });
   }
